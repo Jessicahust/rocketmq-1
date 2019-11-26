@@ -65,33 +65,46 @@ public class RequestCode {
 
     public static final int UNLOCK_BATCH_MQ = 42;
     public static final int GET_ALL_CONSUMER_OFFSET = 43;
-
+    /**
+     *    Broker 获取所有定时进度
+     */
     public static final int GET_ALL_DELAY_OFFSET = 45;
 
     public static final int CHECK_CLIENT_CONFIG = 46;
-
+    /**
+     *     保存namespace下key、value到内存configTable，同时序列化到userHome/namesrv/kvConfig.json文件中。
+     */
     public static final int PUT_KV_CONFIG = 100;
-
+    /** 从内存configTable中根据namespace和key获得配置的value值*/
     public static final int GET_KV_CONFIG = 101;
-
+    /** Namesrv 从Namesrv删除KV配置，同时序列化*/
     public static final int DELETE_KV_CONFIG = 102;
-
+    /** Namesrv 注册一个Broker，数据都是持久化的，如果存在则覆盖配置*/
     public static final int REGISTER_BROKER = 103;
-
+    /** Namesrv 卸载一个Broker，数据都是持久化的*/
     public static final int UNREGISTER_BROKER = 104;
+    /** Namesrv 根据Topic获取Broker Name、队列数(包含读队列与写队列)*/
     public static final int GET_ROUTEINTO_BY_TOPIC = 105;
-
+    /** Namesrv 获取注册到Name Server的所有Broker集群信息*/
     public static final int GET_BROKER_CLUSTER_INFO = 106;
     public static final int UPDATE_AND_CREATE_SUBSCRIPTIONGROUP = 200;
+
     public static final int GET_ALL_SUBSCRIPTIONGROUP_CONFIG = 201;
     public static final int GET_TOPIC_STATS_INFO = 202;
     public static final int GET_CONSUMER_CONNECTION_LIST = 203;
     public static final int GET_PRODUCER_CONNECTION_LIST = 204;
     public static final int WIPE_WRITE_PERM_OF_BROKER = 205;
-
+    /**
+     * 从Name Server获取完整Topic列表
+     */
     public static final int GET_ALL_TOPIC_LIST_FROM_NAMESERVER = 206;
-
+    /**
+     * 从Broker删除订阅组
+     */
     public static final int DELETE_SUBSCRIPTIONGROUP = 207;
+    /**
+     * 从Broker获取消费状态（进度）
+     */
     public static final int GET_CONSUME_STATS = 208;
 
     public static final int SUSPEND_CONSUMER = 209;

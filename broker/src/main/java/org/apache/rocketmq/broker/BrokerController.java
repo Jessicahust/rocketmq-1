@@ -392,15 +392,19 @@ public class BrokerController {
                     }
                 }, 1000 * 10, 1000 * 60 * 2, TimeUnit.MILLISECONDS);
             }
-
+            //当前角色是Slave时
             if (BrokerRole.SLAVE == this.messageStoreConfig.getBrokerRole()) {
+                // 如果当前Broker配置中指定了haMasterAddress,则赋值 HAClient 的 masterAddress
                 if (this.messageStoreConfig.getHaMasterAddress() != null && this.messageStoreConfig.getHaMasterAddress().length() >= 6) {
+                    // 将haMasterAddress的值设置到 HAService 的 HAClient 的masterAddress中
                     this.messageStore.updateHaMasterAddress(this.messageStoreConfig.getHaMasterAddress());
                     this.updateMasterHAServerAddrPeriodically = false;
                 } else {
+                    //如果配置中未指定Master的IP,则定期从Namesrv处更新获取
                     this.updateMasterHAServerAddrPeriodically = true;
                 }
 
+                //Slave每隔60S从Master处同步TopicConfig，ConsumerOffset，DelayOffset，SubscriptionGroupConfig
                 this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
 
                     @Override

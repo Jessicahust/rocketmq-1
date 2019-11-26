@@ -105,6 +105,7 @@ public abstract class ServiceThread implements Runnable {
 
     protected void waitForRunning(long interval) {
         if (hasNotified.compareAndSet(true, false)) {
+            //用来交换读请求链表和写请求链表
             this.onWaitEnd();
             return;
         }
@@ -118,6 +119,7 @@ public abstract class ServiceThread implements Runnable {
             log.error("Interrupted", e);
         } finally {
             hasNotified.set(false);
+            //用来交换读请求链表和写请求链表
             this.onWaitEnd();
         }
     }

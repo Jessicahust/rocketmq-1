@@ -70,7 +70,13 @@ public class ClientManageProcessor implements NettyRequestProcessor {
     public boolean rejectRequest() {
         return false;
     }
-
+    /**
+     * 客户端发送心跳至Broker,注册Producer或Consumer
+     *
+     * @param ctx
+     * @param request
+     * @return
+     */
     public RemotingCommand heartBeat(ChannelHandlerContext ctx, RemotingCommand request) {
         RemotingCommand response = RemotingCommand.createResponseCommand(null);
         HeartbeatData heartbeatData = HeartbeatData.decode(request.getBody(), HeartbeatData.class);
@@ -87,12 +93,14 @@ public class ClientManageProcessor implements NettyRequestProcessor {
                     data.getGroupName());
             boolean isNotifyConsumerIdsChangedEnable = true;
             if (null != subscriptionGroupConfig) {
+                //在Consumer改变时是否通知其他Consumer
                 isNotifyConsumerIdsChangedEnable = subscriptionGroupConfig.isNotifyConsumerIdsChangedEnable();
                 int topicSysFlag = 0;
                 if (data.isUnitMode()) {
                     topicSysFlag = TopicSysFlag.buildSysFlag(false, true);
                 }
                 String newTopic = MixAll.getRetryTopic(data.getGroupName());
+                //为consumeGroup创建Retry ConsumeQueue ："%RETRY%" + consumerGroup
                 this.brokerController.getTopicConfigManager().createTopicInSendMessageBackMethod(
                     newTopic,
                     subscriptionGroupConfig.getRetryQueueNums(),

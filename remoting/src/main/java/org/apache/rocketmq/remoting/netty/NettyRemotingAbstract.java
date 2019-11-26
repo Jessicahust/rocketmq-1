@@ -185,6 +185,7 @@ public abstract class NettyRemotingAbstract {
                         }
 
                         if (!cmd.isOnewayRPC()) {
+                            //处理完成后，响应客户端
                             if (response != null) {
                                 response.setOpaque(opaque);
                                 response.markResponseType();
@@ -262,10 +263,12 @@ public abstract class NettyRemotingAbstract {
             responseFuture.setResponseCommand(cmd);
 
             responseTable.remove(opaque);
-
+            //SYNC请求回调函数为null
             if (responseFuture.getInvokeCallback() != null) {
+                //异步请求调用
                 executeInvokeCallback(responseFuture);
             } else {
+                //SYNC这里
                 responseFuture.putResponse(cmd);
                 responseFuture.release();
             }
@@ -287,6 +290,7 @@ public abstract class NettyRemotingAbstract {
                     @Override
                     public void run() {
                         try {
+                            //调用回调方法，获取服务端响应结果
                             responseFuture.executeInvokeCallback();
                         } catch (Throwable e) {
                             log.warn("execute callback in executor exception, and callback throw", e);
@@ -361,12 +365,16 @@ public abstract class NettyRemotingAbstract {
     public RemotingCommand invokeSyncImpl(final Channel channel, final RemotingCommand request,
         final long timeoutMillis)
         throws InterruptedException, RemotingSendRequestException, RemotingTimeoutException {
+        //相当于request ID, RemotingCommand会为每一个request产生一个request ID, 从0开始, 每次加1
         final int opaque = request.getOpaque();
 
         try {
+            //构建ResponseFuture对象
             final ResponseFuture responseFuture = new ResponseFuture(channel, opaque, timeoutMillis, null, null);
+            //将ResponseFuture放入responseTable
             this.responseTable.put(opaque, responseFuture);
             final SocketAddress addr = channel.remoteAddress();
+            //向netty注册回调,向channel写入RemotingCommand对象
             channel.writeAndFlush(request).addListener(new ChannelFutureListener() {
                 @Override
                 public void operationComplete(ChannelFuture f) throws Exception {
@@ -383,7 +391,7 @@ public abstract class NettyRemotingAbstract {
                     log.warn("send a request command to channel <" + addr + "> failed.");
                 }
             });
-
+            //等待服务器端响应结果
             RemotingCommand responseCommand = responseFuture.waitResponse(timeoutMillis);
             if (null == responseCommand) {
                 if (responseFuture.isSendRequestOK()) {
@@ -404,6 +412,7 @@ public abstract class NettyRemotingAbstract {
         final InvokeCallback invokeCallback)
         throws InterruptedException, RemotingTooMuchRequestException, RemotingTimeoutException, RemotingSendRequestException {
         long beginStartTime = System.currentTimeMillis();
+        //相当于request ID, RemotingCommand会为每一个request产生一个request ID, 从0开始, 每次加1
         final int opaque = request.getOpaque();
         boolean acquired = this.semaphoreAsync.tryAcquire(timeoutMillis, TimeUnit.MILLISECONDS);
         if (acquired) {
@@ -412,14 +421,19 @@ public abstract class NettyRemotingAbstract {
             if (timeoutMillis < costTime) {
                 throw new RemotingTooMuchRequestException("invokeAsyncImpl call timeout");
             }
-
+            //根据request ID构建ResponseFuture
             final ResponseFuture responseFuture = new ResponseFuture(channel, opaque, timeoutMillis - costTime, invokeCallback, once);
+            //将ResponseFuture放入responseTable
             this.responseTable.put(opaque, responseFuture);
             try {
+                //使用Netty的channel发送请求数据
+                //netty io.netty.util.concurrent.DefaultPromise.notifyListener0 会回调operationComplete 方法
                 channel.writeAndFlush(request).addListener(new ChannelFutureListener() {
+                    //消息发送后执行，由netty回调该方法
                     @Override
                     public void operationComplete(ChannelFuture f) throws Exception {
                         if (f.isSuccess()) {
+                            //如果发送消息成功给Server，那么这里直接Set后return
                             responseFuture.setSendRequestOK(true);
                             return;
                         }
@@ -454,10 +468,12 @@ public abstract class NettyRemotingAbstract {
             responseFuture.setSendRequestOK(false);
             responseFuture.putResponse(null);
             try {
+                //执行回调
                 executeInvokeCallback(responseFuture);
             } catch (Throwable e) {
                 log.warn("execute callback in requestFail, and callback throw", e);
             } finally {
+                //释放信号量
                 responseFuture.release();
             }
         }

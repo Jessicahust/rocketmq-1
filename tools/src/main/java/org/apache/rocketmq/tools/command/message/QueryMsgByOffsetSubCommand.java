@@ -28,6 +28,9 @@ import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 import org.apache.rocketmq.tools.command.SubCommand;
 import org.apache.rocketmq.tools.command.SubCommandException;
 
+/**
+ * 根据消息队列和消息队列偏移量查询
+ */
 public class QueryMsgByOffsetSubCommand implements SubCommand {
 
     @Override

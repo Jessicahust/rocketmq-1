@@ -29,12 +29,29 @@ public class IndexHeader {
     private static int hashSlotcountIndex = 32;
     private static int indexCountIndex = 36;
     private final ByteBuffer byteBuffer;
+    /**
+     * 开始时间戳
+     */
     private AtomicLong beginTimestamp = new AtomicLong(0);
+    /**
+     * 结束时间戳
+     */
     private AtomicLong endTimestamp = new AtomicLong(0);
+    /**
+     * 开始物理偏移量
+     */
     private AtomicLong beginPhyOffset = new AtomicLong(0);
+    /**
+     * 结束物理偏移量
+     */
     private AtomicLong endPhyOffset = new AtomicLong(0);
+    /**
+     * 已使用的哈希槽数量
+     */
     private AtomicInteger hashSlotCount = new AtomicInteger(0);
-
+    /**
+     * 已使用的索引数量
+     */
     private AtomicInteger indexCount = new AtomicInteger(1);
 
     public IndexHeader(final ByteBuffer byteBuffer) {

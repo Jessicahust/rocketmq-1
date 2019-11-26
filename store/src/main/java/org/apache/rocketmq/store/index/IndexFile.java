@@ -32,7 +32,13 @@ public class IndexFile {
     private static int hashSlotSize = 4;
     private static int indexSize = 20;
     private static int invalidIndex = 0;
+    /**
+     * 5000000
+     */
     private final int hashSlotNum;
+    /**
+     * 5000000*4
+     */
     private final int indexNum;
     private final MappedFile mappedFile;
     private final FileChannel fileChannel;
@@ -121,22 +127,28 @@ public class IndexFile {
                 int absIndexPos =
                     IndexHeader.INDEX_HEADER_SIZE + this.hashSlotNum * hashSlotSize
                         + this.indexHeader.getIndexCount() * indexSize;
-
+                //存放键哈希值
                 this.mappedByteBuffer.putInt(absIndexPos, keyHash);
+                //存放物理偏移量
                 this.mappedByteBuffer.putLong(absIndexPos + 4, phyOffset);
+                //存放时间戳
                 this.mappedByteBuffer.putInt(absIndexPos + 4 + 8, (int) timeDiff);
+                //存放下一个索引槽地址，同一hash值的key就是通过该索引槽找到的
                 this.mappedByteBuffer.putInt(absIndexPos + 4 + 8 + 4, slotValue);
-
+                //将索引槽的index存放在哈希槽中，通过哈希值对应的哈希槽就可以获取索引槽，从索引槽就可以找到一系列哈希值相等的key
                 this.mappedByteBuffer.putInt(absSlotPos, this.indexHeader.getIndexCount());
 
                 if (this.indexHeader.getIndexCount() <= 1) {
                     this.indexHeader.setBeginPhyOffset(phyOffset);
                     this.indexHeader.setBeginTimestamp(storeTimestamp);
                 }
-
+                //增加已使用的哈希槽的数量
                 this.indexHeader.incHashSlotCount();
+                //增加已使用的索引槽的数量
                 this.indexHeader.incIndexCount();
+                //设置最后commitlog文件的物理偏移量
                 this.indexHeader.setEndPhyOffset(phyOffset);
+                //设置最后存储时间
                 this.indexHeader.setEndTimestamp(storeTimestamp);
 
                 return true;
@@ -189,8 +201,11 @@ public class IndexFile {
     public void selectPhyOffset(final List<Long> phyOffsets, final String key, final int maxNum,
         final long begin, final long end, boolean lock) {
         if (this.mappedFile.hold()) {
+            //计算哈希值
             int keyHash = indexKeyHashMethod(key);
+            //计算哈希槽
             int slotPos = keyHash % this.hashSlotNum;
+            //绝对哈希槽
             int absSlotPos = IndexHeader.INDEX_HEADER_SIZE + slotPos * hashSlotSize;
 
             FileLock fileLock = null;
@@ -199,7 +214,7 @@ public class IndexFile {
                     // fileLock = this.fileChannel.lock(absSlotPos,
                     // hashSlotSize, true);
                 }
-
+                //获取索引槽
                 int slotValue = this.mappedByteBuffer.getInt(absSlotPos);
                 // if (fileLock != null) {
                 // fileLock.release();
@@ -209,11 +224,12 @@ public class IndexFile {
                 if (slotValue <= invalidIndex || slotValue > this.indexHeader.getIndexCount()
                     || this.indexHeader.getIndexCount() <= 1) {
                 } else {
+                    //获取哈希值相同的所有的链表值
                     for (int nextIndexToRead = slotValue; ; ) {
                         if (phyOffsets.size() >= maxNum) {
                             break;
                         }
-
+                        //获取索引槽的绝对偏移量
                         int absIndexPos =
                             IndexHeader.INDEX_HEADER_SIZE + this.hashSlotNum * hashSlotSize
                                 + nextIndexToRead * indexSize;

@@ -290,6 +290,7 @@ public class DefaultMQAdminExtImpl implements MQAdminExt, MQAdminExtInner {
         } catch (Exception e) {
             log.warn("the msgId maybe created by new client. msgId={}", msgId, e);
         }
+        //通过唯一键查询
         return this.mqClientInstance.getMQAdminImpl().queryMessageByUniqKey(topic, msgId);
     }
 

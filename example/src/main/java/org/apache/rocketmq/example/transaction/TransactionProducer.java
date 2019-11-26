@@ -30,8 +30,12 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * 发送事务消息
+ */
 public class TransactionProducer {
     public static void main(String[] args) throws MQClientException, InterruptedException {
+        //事务执行的listener，由用户实现及接口，提供本地事务执行的代码，以及回查本地事务处理结果的逻辑。
         TransactionListener transactionListener = new TransactionListenerImpl();
         TransactionMQProducer producer = new TransactionMQProducer("please_rename_unique_group_name");
         ExecutorService executorService = new ThreadPoolExecutor(2, 5, 100, TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(2000), new ThreadFactory() {

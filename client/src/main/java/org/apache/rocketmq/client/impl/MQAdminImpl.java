@@ -245,10 +245,12 @@ public class MQAdminImpl {
 
         MessageId messageId = null;
         try {
+            //通过offsetMsgId解析出broker的信息和对应的commitLog文件中消息的偏移量
             messageId = MessageDecoder.decodeMessageId(msgId);
         } catch (Exception e) {
             throw new MQClientException(ResponseCode.NO_MESSAGE, "query message by id finished, but no message.");
         }
+        //发送请求查询消息
         return this.mQClientFactory.getMQClientAPIImpl().viewMessage(RemotingUtil.socketAddress2String(messageId.getAddress()),
             messageId.getOffset(), timeoutMillis);
     }
@@ -366,12 +368,13 @@ public class MQAdminImpl {
 
                     for (MessageExt msgExt : qr.getMessageList()) {
                         if (isUniqKey) {
+                            //如果是通过唯一键查询
                             if (msgExt.getMsgId().equals(key)) {
 
                                 if (messageList.size() > 0) {
 
                                     if (messageList.get(0).getStoreTimestamp() > msgExt.getStoreTimestamp()) {
-
+                                        //找到存储时间最小的返回
                                         messageList.clear();
                                         messageList.add(msgExt);
                                     }

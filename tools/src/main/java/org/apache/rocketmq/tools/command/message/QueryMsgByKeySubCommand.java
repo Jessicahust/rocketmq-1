@@ -27,6 +27,9 @@ import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 import org.apache.rocketmq.tools.command.SubCommand;
 import org.apache.rocketmq.tools.command.SubCommandException;
 
+/**
+ * 根据主键keys查询
+ */
 public class QueryMsgByKeySubCommand implements SubCommand {
 
     @Override

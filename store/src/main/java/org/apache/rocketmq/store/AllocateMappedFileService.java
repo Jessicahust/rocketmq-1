@@ -154,6 +154,7 @@ public class AllocateMappedFileService extends ServiceThread {
         boolean isSuccess = false;
         AllocateRequest req = null;
         try {
+            //返回并删除队列中的第一个元素。如果队列是空的，这个方法将阻塞线程直到队列有元素。
             req = this.requestQueue.take();
             AllocateRequest expectedRequest = this.requestTable.get(req.getFilePath());
             if (null == expectedRequest) {

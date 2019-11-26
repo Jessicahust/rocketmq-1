@@ -163,9 +163,11 @@ public class RouteInfoManager {
                     }
                 }
 
+                // 当注册Slave时,返回Master的addr作为高可用的地址
                 if (MixAll.MASTER_ID != brokerId) {
                     String masterAddr = brokerData.getBrokerAddrs().get(MixAll.MASTER_ID);
                     if (masterAddr != null) {
+                        // 获取master的brokerLiveInfo,将其haServerAddr(addr)赋值给Slave的haServerAddr
                         BrokerLiveInfo brokerLiveInfo = this.brokerLiveTable.get(masterAddr);
                         if (brokerLiveInfo != null) {
                             result.setHaServerAddr(brokerLiveInfo.getHaServerAddr());

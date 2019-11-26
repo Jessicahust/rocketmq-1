@@ -37,6 +37,9 @@ import org.apache.rocketmq.tools.admin.api.MessageTrack;
 import org.apache.rocketmq.tools.command.SubCommand;
 import org.apache.rocketmq.tools.command.SubCommandException;
 
+/**
+ * 根据唯一键查询
+ */
 public class QueryMsgByUniqueKeySubCommand implements SubCommand {
 
     public static void queryById(final DefaultMQAdminExt admin, final String topic,

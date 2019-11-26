@@ -40,7 +40,13 @@ public class IndexService {
      */
     private static final int MAX_TRY_IDX_CREATE = 3;
     private final DefaultMessageStore defaultMessageStore;
+    /**
+     * 5000000
+     */
     private final int hashSlotNum;
+    /**
+     * 5000000*4
+     */
     private final int indexNum;
     private final String storePath;
     private final ArrayList<IndexFile> indexFileList = new ArrayList<IndexFile>();
@@ -199,6 +205,7 @@ public class IndexService {
     }
 
     public void buildIndex(DispatchRequest req) {
+        //获取一个索引文件
         IndexFile indexFile = retryGetAndCreateIndexFile();
         if (indexFile != null) {
             long endPhyOffset = indexFile.getEndPhyOffset();
@@ -206,6 +213,7 @@ public class IndexService {
             String topic = msg.getTopic();
             String keys = msg.getKeys();
             if (msg.getCommitLogOffset() < endPhyOffset) {
+                //如果已经建立所以的偏移量大于当前请求要创建的偏移量，直接返回，说明当前请求的索引已经创建过
                 return;
             }
 
@@ -218,7 +226,7 @@ public class IndexService {
                 case MessageSysFlag.TRANSACTION_ROLLBACK_TYPE:
                     return;
             }
-
+            //通过唯一键建立索引，用于后续查询
             if (req.getUniqKey() != null) {
                 indexFile = putKey(indexFile, msg, buildKey(topic, req.getUniqKey()));
                 if (indexFile == null) {
@@ -226,7 +234,7 @@ public class IndexService {
                     return;
                 }
             }
-
+            //通过主键keys创建索引，用于后续查询
             if (keys != null && keys.length() > 0) {
                 String[] keyset = keys.split(MessageConst.KEY_SEPARATOR);
                 for (int i = 0; i < keyset.length; i++) {
@@ -269,6 +277,7 @@ public class IndexService {
         IndexFile indexFile = null;
 
         for (int times = 0; null == indexFile && times < MAX_TRY_IDX_CREATE; times++) {
+            //所有的索引文件用indexFileList存放，每次取出最后一个indexFile文件，如果当前文件已经满了，则新创建一个indexFile文件
             indexFile = this.getAndCreateLastIndexFile();
             if (null != indexFile)
                 break;
@@ -313,6 +322,7 @@ public class IndexService {
 
         if (indexFile == null) {
             try {
+                //indexFile文件以时间戳命名，新键一个索引文件
                 String fileName =
                     this.storePath + File.separator
                         + UtilAll.timeMillisToHumanString(System.currentTimeMillis());
@@ -329,6 +339,7 @@ public class IndexService {
 
             if (indexFile != null) {
                 final IndexFile flushThisFile = prevIndexFile;
+                //如果是新键一个indexFile文件，则将前一个文件持久化到磁盘
                 Thread flushThread = new Thread(new Runnable() {
                     @Override
                     public void run() {

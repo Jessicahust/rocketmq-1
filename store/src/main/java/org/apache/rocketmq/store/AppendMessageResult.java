@@ -43,6 +43,7 @@ public class AppendMessageResult {
     public AppendMessageResult(AppendMessageStatus status, long wroteOffset, int wroteBytes, String msgId,
         long storeTimestamp, long logicsOffset, long pagecacheRT) {
         this.status = status;
+        //全局偏移量
         this.wroteOffset = wroteOffset;
         this.wroteBytes = wroteBytes;
         this.msgId = msgId;

@@ -187,15 +187,19 @@ public class TransactionalMessageBridge {
     }
 
     public PutMessageResult putHalfMessage(MessageExtBrokerInner messageInner) {
+        //事务消息消息构建
         return store.putMessage(parseHalfMessageInner(messageInner));
     }
 
     private MessageExtBrokerInner parseHalfMessageInner(MessageExtBrokerInner msgInner) {
+        //保存事务消息原来的信息
         MessageAccessor.putProperty(msgInner, MessageConst.PROPERTY_REAL_TOPIC, msgInner.getTopic());
         MessageAccessor.putProperty(msgInner, MessageConst.PROPERTY_REAL_QUEUE_ID,
             String.valueOf(msgInner.getQueueId()));
+        //重置消息为非事务消息，以便能构建消费队列和索引
         msgInner.setSysFlag(
             MessageSysFlag.resetTransactionValue(msgInner.getSysFlag(), MessageSysFlag.TRANSACTION_NOT_TYPE));
+        //设置事务消息新的topic和消息队列，所有事务消息的topic和队列一样
         msgInner.setTopic(TransactionalMessageUtil.buildHalfTopic());
         msgInner.setQueueId(0);
         msgInner.setPropertiesString(MessageDecoder.messageProperties2String(msgInner.getProperties()));
@@ -203,6 +207,7 @@ public class TransactionalMessageBridge {
     }
 
     public boolean putOpMessage(MessageExt messageExt, String opType) {
+        // 这里要看到opMessage的body为原来halfMessage的offset
         MessageQueue messageQueue = new MessageQueue(messageExt.getTopic(),
             this.brokerController.getBrokerConfig().getBrokerName(), messageExt.getQueueId());
         if (TransactionalMessageUtil.REMOVETAG.equals(opType)) {
@@ -264,11 +269,16 @@ public class TransactionalMessageBridge {
 
     private MessageExtBrokerInner makeOpMessageInner(Message message, MessageQueue messageQueue) {
         MessageExtBrokerInner msgInner = new MessageExtBrokerInner();
+        //topic为MixAll.RMQ_SYS_TRANS_OP_HALF_TOPIC
         msgInner.setTopic(message.getTopic());
+        //消息体为对应的half消息在commitLog文件中的偏移量
         msgInner.setBody(message.getBody());
+        //消息队列为0
         msgInner.setQueueId(messageQueue.getQueueId());
+        //TransactionalMessageUtil.REMOVETAG
         msgInner.setTags(message.getTags());
         msgInner.setTagsCode(MessageExtBrokerInner.tagsString2tagsCode(msgInner.getTags()));
+        //设置为非事务消息，能被创建index和consumeQueue
         msgInner.setSysFlag(0);
         MessageAccessor.setProperties(msgInner, message.getProperties());
         msgInner.setPropertiesString(MessageDecoder.messageProperties2String(message.getProperties()));
@@ -298,6 +308,7 @@ public class TransactionalMessageBridge {
      * @return This method will always return true.
      */
     private boolean addRemoveTagInTransactionOp(MessageExt messageExt, MessageQueue messageQueue) {
+        // 这里要看到opMessage的body为原来halfMessage的offset
         Message message = new Message(TransactionalMessageUtil.buildOpTopic(), TransactionalMessageUtil.REMOVETAG,
             String.valueOf(messageExt.getQueueOffset()).getBytes(TransactionalMessageUtil.charset));
         writeOp(message, messageQueue);
